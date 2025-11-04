@@ -152,3 +152,7 @@ chmod 600 hosts.json
 3. **Execution**: Runs commands/scripts on remote hosts
 4. **Output Collection**: Aggregates and prefixes output by hostname
 5. **Cleanup**: Removes temporary files from target hosts
+
+---
+
+_This README content is AI-generated and human-reviewed._

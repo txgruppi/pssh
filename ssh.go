@@ -70,15 +70,22 @@ func sshUploadRunAndCleanup(host Host, filepath string, useSudo, dryRun bool) (s
 		if dryRun {
 			slog.Info("dry-run: sudo run", "host", host.Name, "file", filepath)
 		} else {
-			cmd, err = client.Command("sudo", "--stdin", "--prompt=", filepath)
-			if err != nil {
-				return nil, nil, err
+			if host.SudoPassword == "" {
+				cmd, err = client.Command("sudo", filepath)
+				if err != nil {
+					return nil, nil, err
+				}
+			} else {
+				cmd, err = client.Command("sudo", "--stdin", "--prompt=", filepath)
+				if err != nil {
+					return nil, nil, err
+				}
+				pw := host.SudoPassword
+				if !strings.HasSuffix(pw, "\n") {
+					pw += "\n"
+				}
+				cmd.Stdin = strings.NewReader(pw)
 			}
-			pw := host.SudoPassword
-			if !strings.HasSuffix(pw, "\n") {
-				pw += "\n"
-			}
-			cmd.Stdin = strings.NewReader(pw)
 		}
 	} else {
 		if dryRun {

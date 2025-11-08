@@ -5,12 +5,12 @@ import (
 	"os"
 )
 
-func isExecutableFile(filepath string) bool {
+func isFile(filepath string) bool {
 	info, err := os.Stat(filepath)
 	if err != nil {
 		return false
 	}
-	return info.Mode().IsRegular() && info.Mode().Perm()&0111 != 0
+	return info.Mode().IsRegular()
 }
 
 func makeTempExecFile(content []byte) (string, error) {
@@ -53,7 +53,9 @@ func copyTempFile(src string) (string, error) {
 		return "", err
 	}
 
-	if err := dst.Chmod(info.Mode()); err != nil {
+	mode := info.Mode()
+	mode |= 0700
+	if err := dst.Chmod(mode); err != nil {
 		return "", err
 	}
 

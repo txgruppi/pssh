@@ -46,7 +46,7 @@ func run() error {
 				return err
 			}
 			hosts = hosts.FilterByTags(c.StringSlice("tag"))
-			isFile := c.Args().Len() == 1 && isExecutableFile(c.Args().Get(0))
+			isFile := c.Args().Len() == 1 && isFile(c.Args().Get(0))
 			var filepath string
 			if isFile {
 				filepath, err = copyTempFile(c.Args().Get(0))

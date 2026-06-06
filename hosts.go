@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"slices"
 )
@@ -38,12 +39,12 @@ func loadHostsFromFile(filepath string) (Hosts, error) {
 	var hosts Hosts
 	file, err := os.Open(filepath)
 	if err != nil {
-		return hosts, err
+		return hosts, fmt.Errorf("error opening hosts file %s: %w", filepath, err)
 	}
 	defer file.Close()
 	decoder := json.NewDecoder(file)
 	if err := decoder.Decode(&hosts); err != nil {
-		return hosts, err
+		return hosts, fmt.Errorf("error decoding hosts file %s: %w", filepath, err)
 	}
 	return hosts, nil
 }

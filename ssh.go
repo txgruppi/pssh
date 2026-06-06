@@ -49,7 +49,7 @@ func sshUploadRunAndCleanup(host Host, filepath string, useSudo, dryRun, noKnown
 		},
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("error creating SSH connection to %s: %w", host.Name, err)
 	}
 	defer client.Close()
 
@@ -58,7 +58,7 @@ func sshUploadRunAndCleanup(host Host, filepath string, useSudo, dryRun, noKnown
 	} else {
 		err = upload(client, filepath, filepath)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("error uploading file to %s: %w", host.Name, err)
 		}
 	}
 
@@ -81,12 +81,12 @@ func sshUploadRunAndCleanup(host Host, filepath string, useSudo, dryRun, noKnown
 			if host.SudoPassword == "" {
 				cmd, err = client.Command("sudo", filepath)
 				if err != nil {
-					return nil, nil, err
+					return nil, nil, fmt.Errorf("error creating sudo command to %s: %w", host.Name, err)
 				}
 			} else {
 				cmd, err = client.Command("sudo", "--stdin", "--prompt=", filepath)
 				if err != nil {
-					return nil, nil, err
+					return nil, nil, fmt.Errorf("error creating sudo command to %s: %w", host.Name, err)
 				}
 				pw := host.SudoPassword
 				if !strings.HasSuffix(pw, "\n") {
@@ -101,7 +101,7 @@ func sshUploadRunAndCleanup(host Host, filepath string, useSudo, dryRun, noKnown
 		} else {
 			cmd, err = client.Command(filepath)
 			if err != nil {
-				return nil, nil, err
+				return nil, nil, fmt.Errorf("error creating command to %s: %w", host.Name, err)
 			}
 		}
 	}
@@ -112,7 +112,7 @@ func sshUploadRunAndCleanup(host Host, filepath string, useSudo, dryRun, noKnown
 		cmd.Stderr = &errbuf
 		err = cmd.Run()
 		if err != nil {
-			return outbuf.Bytes(), errbuf.Bytes(), err
+			return outbuf.Bytes(), errbuf.Bytes(), fmt.Errorf("error running command on %s: %w", host.Name, err)
 		}
 	}
 
@@ -122,35 +122,35 @@ func sshUploadRunAndCleanup(host Host, filepath string, useSudo, dryRun, noKnown
 func upload(client *goph.Client, local, remote string) error {
 	localFile, err := os.Open(local)
 	if err != nil {
-		return err
+		return fmt.Errorf("error opening local file %s: %w", local, err)
 	}
 	defer localFile.Close()
 
 	info, err := localFile.Stat()
 	if err != nil {
-		return err
+		return fmt.Errorf("error statting local file %s: %w", local, err)
 	}
 
 	ftp, err := client.NewSftp()
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating new SFTP client: %w", err)
 	}
 	defer ftp.Close()
 
 	remoteFile, err := ftp.Create(remote)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating remote file %s: %w", remote, err)
 	}
 	defer remoteFile.Close()
 
 	_, err = io.Copy(remoteFile, localFile)
 	if err != nil {
-		return err
+		return fmt.Errorf("error copying local file to remote file: %w", err)
 	}
 
 	err = remoteFile.Chmod(info.Mode())
 	if err != nil {
-		return err
+		return fmt.Errorf("error chmodding remote file %s: %w", remote, err)
 	}
 
 	return nil

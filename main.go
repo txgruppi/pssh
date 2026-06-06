@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"strings"
@@ -47,7 +48,7 @@ func run() error {
 		Action: func(ctx context.Context, c *cli.Command) error {
 			hosts, err := loadHostsFromFile(c.String("hosts"))
 			if err != nil {
-				return err
+				return fmt.Errorf("error loading hosts from file %s: %w", c.String("hosts"), err)
 			}
 			hosts = hosts.FilterByTags(c.StringSlice("tag"))
 			isFile := c.Args().Len() == 1 && isFile(c.Args().Get(0))
@@ -55,12 +56,12 @@ func run() error {
 			if isFile {
 				filepath, err = copyTempFile(c.Args().Get(0))
 				if err != nil {
-					return err
+					return fmt.Errorf("error copying temp file: %w", err)
 				}
 			} else {
 				filepath, err = makeTempExecFile([]byte(strings.Join(c.Args().Slice(), " ")))
 				if err != nil {
-					return err
+					return fmt.Errorf("error making temp exec file: %w", err)
 				}
 			}
 			defer os.Remove(filepath)
@@ -85,13 +86,13 @@ func run() error {
 						os.Stderr.Write(stderr)
 					}
 					if err != nil {
-						return err
+						return fmt.Errorf("error running command on %s: %w", hosts[i].Name, err)
 					}
 					return nil
 				})
 			}
 			err = g.Wait()
-			return err
+			return fmt.Errorf("error waiting for commands to finish: %w", err)
 		},
 	}
 	return app.Run(context.Background(), os.Args)

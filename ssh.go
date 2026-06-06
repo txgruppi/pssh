@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"log/slog"
 	"net"
@@ -22,22 +23,29 @@ func init() {
 	}
 }
 
-func sshUploadRunAndCleanup(host Host, filepath string, useSudo, dryRun bool) (stdout, stderr []byte, err error) {
+func sshUploadRunAndCleanup(host Host, filepath string, useSudo, dryRun, noKnownHosts bool) (stdout, stderr []byte, err error) {
 	client, err := goph.NewConn(&goph.Config{
 		Auth: auth,
 		Addr: host.Addr,
 		Port: 22,
 		User: host.User,
 		Callback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-			found, err := goph.CheckKnownHost(hostname, remote, key, "")
-			if found && err != nil {
-				return err
-			}
-			if found && err == nil {
+			if noKnownHosts {
 				return nil
 			}
+			found, err := goph.CheckKnownHost(hostname, remote, key, "")
+			if found && err != nil {
+				return fmt.Errorf("error checking known host %s: %w", hostname, err)
+			}
+			if found && err == nil {
+				return fmt.Errorf("error checking known host %s: %w", hostname, err)
+			}
 			slog.Warn("adding new host to known_hosts", "host", hostname, "addr", remote.String())
-			return goph.AddKnownHost(hostname, remote, key, "")
+			err = goph.AddKnownHost(hostname, remote, key, "")
+			if err != nil {
+				return fmt.Errorf("error adding known host %s: %w", hostname, err)
+			}
+			return nil
 		},
 	})
 	if err != nil {

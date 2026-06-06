@@ -39,6 +39,10 @@ func run() error {
 				Value: -1,
 				Usage: "Limit the number of concurrent connections (default: unlimited)",
 			},
+			&cli.BoolFlag{
+				Name:  "no-known-hosts",
+				Usage: "Do not check known hosts",
+			},
 		},
 		Action: func(ctx context.Context, c *cli.Command) error {
 			hosts, err := loadHostsFromFile(c.String("hosts"))
@@ -65,7 +69,7 @@ func run() error {
 			g.SetLimit(c.Int("limit"))
 			for i, host := range hosts {
 				g.Go(func() error {
-					stdout, stderr, err := sshUploadRunAndCleanup(host, filepath, c.Bool("sudo"), c.Bool("dry-run"))
+					stdout, stderr, err := sshUploadRunAndCleanup(host, filepath, c.Bool("sudo"), c.Bool("dry-run"), c.Bool("no-known-hosts"))
 					m.Lock()
 					defer m.Unlock()
 					if len(stdout) > 0 {

@@ -92,7 +92,10 @@ func run() error {
 				})
 			}
 			err = g.Wait()
-			return fmt.Errorf("error waiting for commands to finish: %w", err)
+			if err != nil {
+				return fmt.Errorf("error waiting for commands to finish: %w", err)
+			}
+			return nil
 		},
 	}
 	return app.Run(context.Background(), os.Args)

@@ -38,7 +38,7 @@ func sshUploadRunAndCleanup(host Host, filepath string, useSudo, dryRun, noKnown
 				return fmt.Errorf("error checking known host %s: %w", hostname, err)
 			}
 			if found && err == nil {
-				return fmt.Errorf("error checking known host %s: %w", hostname, err)
+				return nil
 			}
 			slog.Warn("adding new host to known_hosts", "host", hostname, "addr", remote.String())
 			err = goph.AddKnownHost(hostname, remote, key, "")
@@ -66,9 +66,9 @@ func sshUploadRunAndCleanup(host Host, filepath string, useSudo, dryRun, noKnown
 		if dryRun {
 			slog.Info("dry-run: cleanup", "host", host.Name, "file", filepath)
 		} else {
-			_, err = client.Run("rm -f " + filepath)
-			if err != nil {
-				slog.Error("cleanup failed", "host", host.Name, "file", filepath, "error", err)
+			_, er := client.Run("rm -f " + filepath)
+			if er != nil {
+				slog.Error("cleanup failed", "host", host.Name, "file", filepath, "error", er)
 			}
 		}
 	}()
